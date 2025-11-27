@@ -4,6 +4,25 @@
 Imagine a world where images are processed and transformed effortlessly in the cloud.  
 **_Project Horizon_ is an image processing pipeline that optimize images uploaded by users, making them smaller and faster to load without sacrificing visual quality.**
 
+# C hello-world!
+
+<!-- toc -->
+- [Project Horizon](#project-horizon)
+- [C hello-world!](#c-hello-world!)
+	- [System Requirements](#system-requirements)
+		- [Functional Requirements](#functional-requirements)
+		- [Non-Functional Requirements](#non-functional-requirements)
+	- [System Design](#system-design)
+	- [Balance between speed, storage, and image quality.](#balance-between-speed,-storage,-and-image-quality.)
+		- [Benchmarks (Maximum image dimension: 1000 pixels)](#benchmarks-(maximum-image-dimension:-1000-pixels))
+	- [How to deploy and run Project Horizon](#how-to-deploy-and-run-project-horizon)
+		- [Deploy the infrastructure to AWS](#deploy-the-infrastructure-to-aws)
+		- [CLI Usage](#cli-usage)
+		- [HTTP API Usage](#http-api-usage)
+		- [Delete the infrastructure](#delete-the-infrastructure)
+	- [How to run unit tests](#how-to-run-unit-tests)
+	- [CI/CD Pipeline](#ci/cd-pipeline)
+
 ## System Requirements
 
 ### Functional Requirements
