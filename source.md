@@ -6,7 +6,8 @@ Imagine a world where images are processed and transformed effortlessly in the c
 
 # C hello-world!
 
-<!-- toc -->
+
+<!-- init-toc -->
 - [Project Horizon](#project-horizon)
 - [C hello-world!](#c-hello-world!)
 	- [System Requirements](#system-requirements)
@@ -22,6 +23,7 @@ Imagine a world where images are processed and transformed effortlessly in the c
 		- [Delete the infrastructure](#delete-the-infrastructure)
 	- [How to run unit tests](#how-to-run-unit-tests)
 	- [CI/CD Pipeline](#ci/cd-pipeline)
+<!-- end-toc -->
 
 ## System Requirements
 

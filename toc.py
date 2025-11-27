@@ -19,22 +19,26 @@ def main():
     path = Path(Path(__file__).parent, "source.md")
     lines = []
     tocs = []
-    toc_position = -1
+    init_toc_position = -1
+    end_toc_position = -1
 
     with open(path, "rt") as f:
         lines = f.read().splitlines()
 
     for i, line in enumerate(lines):
-        if "<!-- toc -->" in line:
-            toc_position = i
+        if "<!-- init-toc -->" in line:
+            init_toc_position = i
+        elif "<!-- end-toc -->" in line:
+            end_toc_position = i
         elif line.startswith("#"):
             tocs.append(create_toc_row(line))
 
-    if toc_position == -1:
+    if init_toc_position == -1 or end_toc_position == -1 or init_toc_position >= end_toc_position:
+        print(f"The toc configuration is not valid. (init_toc_position: {init_toc_position}, end_toc_position: {end_toc_position}) ")
         sys.exit(1)
 
-    lines_before_tocs = lines[:toc_position+1]
-    lines_after_tocs = lines[toc_position+1:]
+    lines_before_tocs = lines[:init_toc_position+1]
+    lines_after_tocs = lines[end_toc_position:]
     new_lines = lines_before_tocs + tocs + lines_after_tocs
     print("#===== line before tocs")
     for l in new_lines:
