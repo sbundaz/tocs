@@ -1,9 +1,8 @@
 import shutil
 import subprocess
 import tempfile
-
 import pytest
-from toc import create_toc_row
+from toc.main import create_toc_row
 
 INDENT_LEVEL = "    "
 
@@ -37,7 +36,7 @@ def test_lorem_ipsum():
         shutil.copy("tests/fixtures/lorem_ipsum_input.md", tmp.name)
 
         result = subprocess.run(
-            ["python3", "toc.py", tmp.name], capture_output=True, text=True
+            ["python3", "toc/main.py", tmp.name], capture_output=True, text=True
         )
 
         assert result.returncode == 0
@@ -64,7 +63,7 @@ def test_invalid_toc_configuration(fixture_file_name):
         shutil.copy(f"tests/fixtures/{fixture_file_name}", tmp.name)
 
         result = subprocess.run(
-            ["python3", "toc.py", tmp.name], capture_output=True, text=True
+            ["python3", "toc/main.py", tmp.name], capture_output=True, text=True
         )
 
         assert result.returncode == 1
