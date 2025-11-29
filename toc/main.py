@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import sys
 
 INDENT_LEVEL = "    "
@@ -13,9 +14,14 @@ def create_toc_row(line: str) -> str:
         j += 1
 
     line_content = line[hashes + 1 :]
-    anchor = line_content.replace(" ", "-").lower()
+    anchor = create_anchor(line_content)
     toc_row = f"{INDENT_LEVEL *(hashes-1)}- [{line_content}](#{anchor})"
     return toc_row
+
+
+def create_anchor(line_content: str) -> str:
+    anchor = re.sub(r"[^a-zA-Z0-9\-_ ]", "", line_content)
+    return anchor.replace(" ", "-").lower()
 
 
 def process_file(path):
@@ -45,7 +51,8 @@ def process_file(path):
         or init_toc_position >= end_toc_position
     ):
         print(
-            f"Error: Missing or invalid TOC markers. Add '<!-- init-toc -->' and '<!-- end-toc -->' to your file.", file=sys.stderr
+            f"Error: Missing or invalid TOC markers. Add '<!-- init-toc -->' and '<!-- end-toc -->' to your file.",
+            file=sys.stderr,
         )
         sys.exit(1)
 
@@ -61,6 +68,7 @@ def process_file(path):
         print(f"Error while writing {path}: {e}", file=sys.stderr)
         sys.exit(1)
 
+
 def main():
     if len(sys.argv) < 2:
         print("Select a file!", file=sys.stderr)
@@ -74,6 +82,7 @@ def main():
         sys.exit(1)
 
     process_file(path)
+
 
 if __name__ == "__main__":
     main()
