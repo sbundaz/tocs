@@ -76,8 +76,7 @@ def main():
         description="Generate table of contents for markdown files",
         epilog="""
   Examples:
-    toc README.md                    Generate TOC in README.md
-    toc docs/guide.md               Process file in subdirectory
+    toc /path/to/file.md                    Generate TOC in file.md
 
   Requirements:
     The file must contain <!-- init-toc --> and <!-- end-toc --> markers.

@@ -10,7 +10,10 @@ At the moment only a **manual installation** is available:
 - from the root of the repository: `pipx install .`
 - to upgrade toc version: `pipx upgrade toc`
 
-Once installed you can generate the toc section with a simple command: `toc input_file.md`
+**Basic usage:**<br>
+- `toc input_file.md` - Generate TOC for the file
+- `toc --help` - Show usage instructions
+- `toc --version` - Display version information
 
 ### toc example
 Given the following markdown file **input_file.md**:
