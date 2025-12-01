@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 import re
 import sys
@@ -70,15 +71,27 @@ def process_file(path):
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("Select a file!", file=sys.stderr)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        prog="toc",
+        description="Generate table of contents for markdown files",
+        epilog="""
+  Examples:
+    toc README.md                    Generate TOC in README.md
+    toc docs/guide.md               Process file in subdirectory
 
-    parameter_path = sys.argv[1]
-    path = Path(parameter_path).resolve()
+  Requirements:
+    The file must contain <!-- init-toc --> and <!-- end-toc --> markers.
+  """,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument("file", help="Markdown file to process")
+    parser.add_argument("--version", action="version", version="toc 1.0.0")
+    args = parser.parse_args()
+    path = Path(args.file).resolve()
 
     if not path.exists():
-        print(f"File {path} not found", file=sys.stderr)
+        print(f"Error: File '{args.file}' not found", file=sys.stderr)
         sys.exit(1)
 
     process_file(path)
