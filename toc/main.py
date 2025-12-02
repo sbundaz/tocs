@@ -106,7 +106,7 @@ def main():
     )
 
     parser.add_argument("file", help="Markdown file to process")
-    parser.add_argument("--version", action="version", version="toc 1.0.0")
+    parser.add_argument("--version", action="version", version="toc 1.0.1")
     args = parser.parse_args()
     path = Path(args.file).resolve()
 
