@@ -3,14 +3,14 @@
 As a person who loves to write personal technical notes in markdown files, I needed something simple to use.
 
 ## How to install and use tocs
-**Prerequisites:** Python 3.11.9+ and pipx installed (`pip install pipx`).
+**Prerequisites:** Python 3.11.9+
 
-At the moment only a **manual installation** is available:
-- clone the repository
-- from the root of the repository: `pipx install .`
-- to upgrade tocs version: `pipx upgrade tocs`
+### Installation
+```bash
+pip install tocs
+```
 
-**Basic usage:**<br>
+### Basic usage:
 - `tocs input_file.md` - Generate TOC for the file
 - `tocs --help` - Show usage instructions
 - `tocs --version` - Display version information
