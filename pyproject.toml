@@ -3,7 +3,7 @@ name = "tocs"
 description = "Generate TOC for markdown files"
 authors = [{ name = "Andrea Bondanini", email = "bondaniniandrea@gmail.com" }]
 license = { text = "MIT" }
-version = "1.0.2"
+version = "1.0.3"
 requires-python = ">=3.11.9"
 readme = "README.md"
 keywords = ["markdown", "tocs", "cli", "documentation", "generator"]
