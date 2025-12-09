@@ -114,7 +114,7 @@ def main():
     parser.add_argument(
         "--depth", type=int, help="Maximum header depth to include in TOC"
     )
-    parser.add_argument("--version", action="version", version="tocs 1.0.1")
+    parser.add_argument("--version", action="version", version="tocs 1.0.2")
     args = parser.parse_args()
     path = Path(args.file).resolve()
 

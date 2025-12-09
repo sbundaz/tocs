@@ -3,11 +3,18 @@ name = "tocs"
 description = "Generate TOC for markdown files"
 authors = [{ name = "Andrea Bondanini", email = "bondaniniandrea@gmail.com" }]
 license = { text = "MIT" }
-version = "1.0.1"
+version = "1.0.2"
 requires-python = ">=3.11.9"
+readme = "README.md"
+keywords = ["markdown", "tocs", "cli", "documentation", "generator"]
+urls = { "Homepage" = "https://github.com/sbundaz/tocs", "Repository" = "https://github.com/sbundaz/tocs", "Issues" = "https://github.com/sbundaz/tocs/issues" }
 
 [project.optional-dependencies]
 dev = ["pytest", "black"]
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["tocs"]
