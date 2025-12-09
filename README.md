@@ -12,6 +12,11 @@ As a person who loves to write personal technical notes in markdown files, I nee
 pip install tocs
 ```
 
+### Update
+```bash
+pip install --upgrade tocs
+```
+
 ### Basic usage:
 - `tocs input_file.md` - Generate TOC for the file
 - `tocs --depth 2 input_file.md` - Limit the TOC generation to headers up to a specified depth
