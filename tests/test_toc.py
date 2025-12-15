@@ -146,3 +146,26 @@ def test_create_toc_remove_special_chars():
     result = create_toc_row(header)
 
     assert result == "- [Hello!?.:;'\"()[]{}@#$%^&*+=<>/\\|`~World](#helloworld)"
+
+
+def test_dry_run():
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md") as tmp:
+        shutil.copy("tests/fixtures/lorem_ipsum_input.md", tmp.name)
+
+        result = subprocess.run(
+            ["python3", "tocs/main.py", tmp.name, "--dry-run"],
+            capture_output=True,
+            text=True,
+        )
+
+        assert result.returncode == 0
+
+        # Verify file was not modified
+        with open(tmp.name) as f:
+            actual = f.read()
+
+        with open("tests/fixtures/lorem_ipsum_input.md") as f:
+            expected = f.read()
+
+        assert actual == expected
+        assert "- [Header 1](#header-1)" in result.stdout

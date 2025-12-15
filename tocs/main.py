@@ -6,7 +6,7 @@ import sys
 INDENT_LEVEL = "    "
 
 
-def create_toc_row(line: str, max_depth: int = None) -> str:
+def create_toc_row(line, max_depth=None):
     hashes = 0
     j = 0
 
@@ -23,12 +23,12 @@ def create_toc_row(line: str, max_depth: int = None) -> str:
     return toc_row
 
 
-def create_anchor(line_content: str) -> str:
+def create_anchor(line_content):
     anchor = re.sub(r"[^a-zA-Z0-9\-_ ]", "", line_content)
     return anchor.replace(" ", "-").lower()
 
 
-def toggle_ignore_rows_flag(ignore_rows: bool, line: str):
+def toggle_ignore_rows_flag(ignore_rows, line):
     """
     Controls whether to ignore rows inside code snippets that start with ```.
     Also handles multiline snippets.
@@ -43,21 +43,13 @@ def toggle_ignore_rows_flag(ignore_rows: bool, line: str):
         return ignore_rows
 
 
-def process_file(path, depth=None):
-    lines = []
+def generate_toc(original_lines, depth):
     tocs = []
     init_toc_position = -1
     end_toc_position = -1
     ignore_rows = False
 
-    try:
-        with open(path, "rt") as f:
-            lines = f.read().splitlines()
-    except (IOError, PermissionError) as e:
-        print(f"Error while reading {path}: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    for i, line in enumerate(lines):
+    for i, line in enumerate(original_lines):
         ignore_rows = toggle_ignore_rows_flag(ignore_rows, line)
 
         if ignore_rows:
@@ -83,17 +75,41 @@ def process_file(path, depth=None):
         )
         sys.exit(1)
 
-    lines_before_tocs = lines[: init_toc_position + 1]
-    lines_after_tocs = lines[end_toc_position:]
-    new_lines = lines_before_tocs + tocs + lines_after_tocs
+    lines_before_tocs = original_lines[: init_toc_position + 1]
+    lines_after_tocs = original_lines[end_toc_position:]
+    return [lines_before_tocs, tocs, lines_after_tocs]
 
+
+def read_lines_from(path):
+    try:
+        with open(path, "rt") as f:
+            lines = f.read().splitlines()
+    except (IOError, PermissionError) as e:
+        print(f"Error while reading {path}: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    return lines
+
+
+def write_to(path, lines):
     try:
         with open(path, "w") as f:
-            for l in new_lines:
+            for l in lines:
                 f.write(l + "\n")
     except (IOError, PermissionError) as e:
         print(f"Error while writing {path}: {e}", file=sys.stderr)
         sys.exit(1)
+
+
+def process(path: Path, depth: int | None = None, dry_run: bool = False):
+    original_lines = read_lines_from(path)
+    lines_before_tocs, tocs, lines_after_tocs = generate_toc(original_lines, depth)
+
+    if dry_run:
+        for t in tocs:
+            print(t)
+    else:
+        write_to(path, lines_before_tocs + tocs + lines_after_tocs)
 
 
 def main():
@@ -115,6 +131,11 @@ def main():
         "--depth", type=int, help="Maximum header depth to include in TOC"
     )
     parser.add_argument("--version", action="version", version="tocs 1.0.3")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print TOC to stdout without modifying the file",
+    )
     args = parser.parse_args()
     path = Path(args.file).resolve()
 
@@ -126,7 +147,7 @@ def main():
         print(f"Error: depth must be greater than 0", file=sys.stderr)
         sys.exit(1)
 
-    process_file(path, args.depth)
+    process(path, args.depth, args.dry_run)
 
 
 if __name__ == "__main__":
