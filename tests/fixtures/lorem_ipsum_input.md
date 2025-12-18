@@ -22,6 +22,9 @@ Lorem ipsum dolor sit amet...
 # Hello__World
 Lorem ipsum dolor sit amet...
 
+# hellàèìòùÀÈÌÒÙ
+Lorem ipsum dolor sit amet...
+
 # Ignoring Comment
 ```python
 # comment to ignore

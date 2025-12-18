@@ -24,7 +24,7 @@ def create_toc_row(line, max_depth=None):
 
 
 def create_anchor(line_content):
-    anchor = re.sub(r"[^a-zA-Z0-9\-_ ]", "", line_content)
+    anchor = re.sub(r"[^\w\-_ ]", "", line_content)
     return anchor.replace(" ", "-").lower()
 
 

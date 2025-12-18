@@ -6,6 +6,7 @@
 - [Hello--World](#hello--world)
 - [Hello_World](#hello_world)
 - [Hello__World](#hello__world)
+- [hellàèìòùÀÈÌÒÙ](#hellàèìòùàèìòù)
 - [Ignoring Comment](#ignoring-comment)
 - [Hello!?.:;'\"()[]{}@#$%^&*+=<>/\\|`~World](#helloworld)
 <!-- end-tocs -->
@@ -29,6 +30,9 @@ Lorem ipsum dolor sit amet...
 Lorem ipsum dolor sit amet...
 
 # Hello__World
+Lorem ipsum dolor sit amet...
+
+# hellàèìòùÀÈÌÒÙ
 Lorem ipsum dolor sit amet...
 
 # Ignoring Comment
