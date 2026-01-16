@@ -6,7 +6,7 @@ import sys
 INDENT_LEVEL = "    "
 
 
-def create_toc_row(line, max_depth=None):
+def create_toc_row(line, anchor_occurrences, max_depth=None):
     hashes = 0
     j = 0
 
@@ -19,6 +19,13 @@ def create_toc_row(line, max_depth=None):
 
     line_content = line[hashes + 1 :]
     anchor = create_anchor(line_content)
+
+    if anchor not in anchor_occurrences:
+        anchor_occurrences[anchor] = 1
+    else:
+        anchor_occurrences[anchor] += 1
+        anchor = anchor + "-" + str(anchor_occurrences[anchor] - 1)
+
     toc_row = f"{INDENT_LEVEL *(hashes-1)}- [{line_content}](#{anchor})"
     return toc_row
 
@@ -43,11 +50,12 @@ def toggle_ignore_rows_flag(ignore_rows, line):
         return ignore_rows
 
 
-def generate_toc(original_lines, depth):
+def generate_toc(original_lines, max_depth):
     tocs = []
     init_toc_position = -1
     end_toc_position = -1
     ignore_rows = False
+    anchor_occurrences = {}
 
     for i, line in enumerate(original_lines):
         ignore_rows = toggle_ignore_rows_flag(ignore_rows, line)
@@ -60,7 +68,7 @@ def generate_toc(original_lines, depth):
         elif "<!-- end-tocs -->" in line:
             end_toc_position = i
         elif line.startswith("#"):
-            toc_row = create_toc_row(line, depth)
+            toc_row = create_toc_row(line, anchor_occurrences, max_depth)
             if toc_row:
                 tocs.append(toc_row)
 
