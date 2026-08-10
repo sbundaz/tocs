@@ -6,7 +6,9 @@ import sys
 INDENT_LEVEL = "    "
 
 
-def create_toc_row(line, anchor_occurrences, max_depth=None):
+def create_toc_row(
+    line: str, anchor_occurrences: dict[str, int], max_depth: int | None
+):
     hashes = 0
     j = 0
 
@@ -50,12 +52,12 @@ def toggle_ignore_rows_flag(ignore_rows, line):
         return ignore_rows
 
 
-def generate_toc(original_lines, max_depth):
+def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: bool):
     tocs = []
     init_toc_position = -1
     end_toc_position = -1
     ignore_rows = False
-    anchor_occurrences = {}
+    anchor_occurrences: dict[str, int] = {}
 
     for i, line in enumerate(original_lines):
         ignore_rows = toggle_ignore_rows_flag(ignore_rows, line)
@@ -65,6 +67,18 @@ def generate_toc(original_lines, max_depth):
 
         if "<!-- init-tocs -->" in line:
             init_toc_position = i
+
+            if clear_depth:
+                continue
+
+            if max_depth:
+                tocs.append(f"<!-- depth={max_depth} -->")
+            elif re.fullmatch(
+                r"<!-- depth=\d+ -->", original_lines[init_toc_position + 1]
+            ):
+                max_depth = int(original_lines[init_toc_position + 1][11:-4])
+                tocs.append(f"<!-- depth={max_depth} -->")
+
         elif "<!-- end-tocs -->" in line:
             end_toc_position = i
         elif line.startswith("#"):
@@ -109,9 +123,9 @@ def write_to(path, lines):
         sys.exit(1)
 
 
-def process(path: Path, depth: int | None = None, dry_run: bool = False):
+def process(path: Path, depth: int | None = None, dry_run: bool = False, clear_depth: bool = False):
     original_lines = read_lines_from(path)
-    lines_before_tocs, tocs, lines_after_tocs = generate_toc(original_lines, depth)
+    lines_before_tocs, tocs, lines_after_tocs = generate_toc(original_lines, depth, clear_depth)
 
     if dry_run:
         for t in tocs:
@@ -138,6 +152,11 @@ def main():
     parser.add_argument(
         "--depth", type=int, help="Maximum header depth to include in TOC"
     )
+    parser.add_argument(
+        "--clear-depth",
+        action="store_true",
+        help="Clear the max depth once it has been set and locked in the TOC marker",
+    )
     parser.add_argument("--version", action="version", version="tocs 1.0.7")
     parser.add_argument(
         "--dry-run",
@@ -155,9 +174,8 @@ def main():
         print(f"Error: depth must be greater than 0", file=sys.stderr)
         sys.exit(1)
 
-    process(path, args.depth, args.dry_run)
+    process(path, args.depth, args.dry_run, args.clear_depth)
 
 
 if __name__ == "__main__":
     main()
-
