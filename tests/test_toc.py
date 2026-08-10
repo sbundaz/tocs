@@ -167,6 +167,74 @@ def test_create_toc_remove_special_chars():
     assert result == "- [Hello!?.:;'\"()[]{}@#$%^&*+=<>/\\|`~World](#helloworld)"
 
 
+def test_depth_lock_persists_across_runs():
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md") as tmp:
+        shutil.copy("tests/fixtures/lorem_ipsum_depth_2_input.md", tmp.name)
+
+        first = subprocess.run(
+            ["python3", "tocs/main.py", tmp.name, "--depth", "2"],
+            capture_output=True,
+            text=True,
+        )
+        assert first.returncode == 0
+
+        second = subprocess.run(
+            ["python3", "tocs/main.py", tmp.name], capture_output=True, text=True
+        )
+        assert second.returncode == 0
+
+        with open(tmp.name) as f:
+            actual = f.read()
+
+        with open("tests/fixtures/lorem_ipsum_depth_2_output.md") as f:
+            expected = f.read()
+
+        assert actual == expected
+
+
+def test_clear_depth_removes_lock():
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md") as tmp:
+        shutil.copy("tests/fixtures/lorem_ipsum_depth_2_input.md", tmp.name)
+
+        first = subprocess.run(
+            ["python3", "tocs/main.py", tmp.name, "--depth", "2"],
+            capture_output=True,
+            text=True,
+        )
+        assert first.returncode == 0
+
+        second = subprocess.run(
+            ["python3", "tocs/main.py", tmp.name, "--clear-depth"],
+            capture_output=True,
+            text=True,
+        )
+        assert second.returncode == 0
+
+        with open(tmp.name) as f:
+            actual = f.read()
+
+        with open("tests/fixtures/lorem_ipsum_depth_2_cleared_output.md") as f:
+            expected = f.read()
+
+        assert actual == expected
+
+
+def test_init_tocs_as_last_line_returns_standard_error():
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md") as tmp:
+        tmp.write("<!-- init-tocs -->")
+        tmp.flush()
+
+        result = subprocess.run(
+            ["python3", "tocs/main.py", tmp.name], capture_output=True, text=True
+        )
+
+        assert result.returncode == 1
+        assert (
+            result.stderr
+            == "Error: Missing or invalid TOC markers. Add '<!-- init-tocs -->' and '<!-- end-tocs -->' to your file.\n"
+        )
+
+
 def test_dry_run():
     with tempfile.NamedTemporaryFile(mode="w", suffix=".md") as tmp:
         shutil.copy("tests/fixtures/lorem_ipsum_input.md", tmp.name)

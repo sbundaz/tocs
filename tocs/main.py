@@ -7,7 +7,7 @@ INDENT_LEVEL = "    "
 
 
 def create_toc_row(
-    line: str, anchor_occurrences: dict[str, int], max_depth: int | None
+    line: str, anchor_occurrences: dict[str, int], max_depth: int | None = None
 ):
     hashes = 0
     j = 0
@@ -73,11 +73,13 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
 
             if max_depth:
                 tocs.append(f"<!-- depth={max_depth} -->")
-            elif re.fullmatch(
-                r"<!-- depth=\d+ -->", original_lines[init_toc_position + 1]
-            ):
-                max_depth = int(original_lines[init_toc_position + 1][11:-4])
-                tocs.append(f"<!-- depth={max_depth} -->")
+            elif init_toc_position + 1 < len(original_lines):
+                depth_match = re.fullmatch(
+                    r"<!-- depth=(\d+) -->", original_lines[init_toc_position + 1]
+                )
+                if depth_match:
+                    max_depth = int(depth_match.group(1))
+                    tocs.append(f"<!-- depth={max_depth} -->")
 
         elif "<!-- end-tocs -->" in line:
             end_toc_position = i

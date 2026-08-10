@@ -1,7 +1,7 @@
 <!-- init-tocs -->
-<!-- depth=2 -->
 - [Header 1](#header-1)
     - [Header 2](#header-2)
+        - [Header 3](#header-3)
 - [Header 4](#header-4)
 <!-- end-tocs -->
 

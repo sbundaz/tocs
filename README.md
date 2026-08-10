@@ -20,9 +20,17 @@ pip install --upgrade tocs
 ### Basic usage:
 - `tocs input_file.md` - Generate TOC for the file
 - `tocs --depth 2 input_file.md` - Limit the TOC generation to headers up to a specified depth
+- `tocs --clear-depth input_file.md` - Remove a previously locked depth and generate a TOC with no depth limit
 - `tocs --dry-run input_file.md` - Preview TOC without modifying the file
 - `tocs --help` - Show usage instructions
 - `tocs --version` - Display version information
+
+### Depth lock
+The first time you run `tocs` with `--depth N`, that value is written as a
+`<!-- depth=N -->` marker inside the TOC block. On later runs, if you don't
+pass `--depth` again, tocs reads that marker and reuses the same depth, so
+you don't have to keep repeating the flag. Passing a new `--depth` overwrites
+the lock, and `--clear-depth` removes it, going back to an unlimited TOC.
 
 ### tocs example
 Given the following markdown file **input_file.md**:
