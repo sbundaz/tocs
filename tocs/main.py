@@ -159,7 +159,7 @@ def main():
         action="store_true",
         help="Clear the max depth once it has been set and locked in the TOC marker",
     )
-    parser.add_argument("--version", action="version", version="tocs 1.0.7")
+    parser.add_argument("--version", action="version", version="tocs 1.0.8")
     parser.add_argument(
         "--dry-run",
         action="store_true",
