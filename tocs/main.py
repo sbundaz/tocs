@@ -307,10 +307,11 @@ def main():
     )
 
     parser.add_argument("file", help="Markdown file to process")
-    parser.add_argument(
+    depth_options = parser.add_mutually_exclusive_group()
+    depth_options.add_argument(
         "--depth", type=int, help="Maximum header depth to include in TOC"
     )
-    parser.add_argument(
+    depth_options.add_argument(
         "--clear-depth",
         action="store_true",
         help="Clear the max depth once it has been set and locked in the TOC marker",

@@ -411,3 +411,13 @@ def test_invalid_depth_lock_is_reported_and_dropped(tmp_path, lock):
         "<!-- init-tocs -->\n- [A](#a)\n    - [B](#b)\n<!-- end-tocs -->\n"
         "# A\n## B\n"
     )
+
+
+def test_depth_and_clear_depth_are_mutually_exclusive(tmp_path):
+    md = fixture_copy(tmp_path, "lorem_ipsum_depth_2_input.md")
+
+    result = run_tocs(md, "--depth", "1", "--clear-depth")
+
+    assert result.returncode == 2
+    assert "not allowed with argument" in result.stderr
+    assert md.read_text() == read_fixture("lorem_ipsum_depth_2_input.md")
