@@ -204,9 +204,14 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
             if end_toc_position != -1:
                 exit_with_error(f"Found more than one '{END_MARKER}' marker.")
             end_toc_position = i
+        elif init_toc_position != -1 and end_toc_position == -1:
+            # Old TOC content: it is about to be replaced.
+            continue
         else:
             entry = create_toc_entry(line, anchor_occurrences, max_depth)
-            if entry:
+            # Headings above the TOC (e.g. the document title) keep their
+            # anchor, which affects duplicates, but are not listed.
+            if entry and end_toc_position != -1:
                 entries.append(entry)
 
     if (

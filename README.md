@@ -32,6 +32,11 @@ pass `--depth` again, tocs reads that marker and reuses the same depth, so
 you don't have to keep repeating the flag. Passing a new `--depth` overwrites
 the lock, and `--clear-depth` removes it, going back to an unlimited TOC.
 
+### What goes into the TOC
+Only headings below the `<!-- end-tocs -->` marker are listed, so a document
+title placed above the TOC is left out. Headings inside fenced code blocks and
+YAML front matter are ignored.
+
 ### tocs example
 Given the following markdown file **input_file.md**:
 ```md

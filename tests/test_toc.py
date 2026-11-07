@@ -364,3 +364,18 @@ def test_format_toc_never_over_indents(headings, expected):
 )
 def test_markdown_and_html_inside_headings(line, expected):
     assert toc_row(line, {}) == expected
+
+
+def test_headings_above_the_toc_are_not_listed(tmp_path):
+    md = tmp_path / "doc.md"
+    body = "# Title\n## Usage\n"
+    md.write_text(f"# Title\nintro\n<!-- init-tocs -->\n<!-- end-tocs -->\n{body}")
+
+    result = run_tocs(md)
+
+    assert result.returncode == 0, result.stderr
+    assert md.read_text() == (
+        "# Title\nintro\n<!-- init-tocs -->\n"
+        "- [Title](#title-1)\n    - [Usage](#usage)\n"
+        f"<!-- end-tocs -->\n{body}"
+    )
