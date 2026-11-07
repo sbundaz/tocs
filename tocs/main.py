@@ -39,6 +39,8 @@ def create_toc_entry(
         return None
 
     level, text = heading
+    # A link inside the TOC link would be invalid Markdown: keep its text only.
+    text = strip_links(text)
     if not text:
         return None
 
@@ -87,7 +89,19 @@ def unique_anchor(anchor: str, anchor_occurrences: dict[str, int]) -> str:
     return anchor
 
 
+LINK_RE = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
+HTML_TAG_RE = re.compile(r"</?[A-Za-z][^>]*>")
+
+
+def strip_links(text: str) -> str:
+    """Replace [text](url) links and ![alt](src) images with their text."""
+    return LINK_RE.sub(r"\1", text)
+
+
 def create_anchor(line_content):
+    # GitHub builds the anchor from the rendered text, so drop link targets
+    # and HTML tags before removing punctuation.
+    line_content = HTML_TAG_RE.sub("", strip_links(line_content))
     anchor = re.sub(r"[^\w\-_ ]", "", line_content)
     return anchor.replace(" ", "-").lower()
 

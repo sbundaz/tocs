@@ -350,3 +350,17 @@ def test_format_toc_never_over_indents(headings, expected):
     entries = [create_toc_entry(h, occurrences) for h in headings]
 
     assert format_toc(entries) == expected
+
+
+@pytest.mark.parametrize(
+    "line, expected",
+    [
+        (
+            "# See [docs](http://x.y) and `code`",
+            "- [See docs and `code`](#see-docs-and-code)",
+        ),
+        ("# Title <small>beta</small>", "- [Title <small>beta</small>](#title-beta)"),
+    ],
+)
+def test_markdown_and_html_inside_headings(line, expected):
+    assert toc_row(line, {}) == expected
