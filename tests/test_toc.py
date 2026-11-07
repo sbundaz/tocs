@@ -512,3 +512,41 @@ def test_directory_is_rejected(tmp_path):
 
     assert result.returncode == 1
     assert result.stderr == f"Error: '{tmp_path}' is not a file\n"
+
+
+@pytest.mark.parametrize(
+    "args, body, depth",
+    [
+        ([], "# A\n## B\n### C\n", 3),
+        (["--depth", "2"], "# A\n## B\n### C\n", 2),
+        ([], "## A\n### B\n", 3),
+    ],
+)
+def test_success_message_reports_depth_reached(tmp_path, args, body, depth):
+    md = tmp_path / "doc.md"
+    md.write_text(f"<!-- init-tocs -->\n<!-- end-tocs -->\n{body}")
+
+    result = run_tocs(md, *args)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == f"TOC updated in {md}: depth reached {depth}\n"
+
+
+def test_success_message_without_headings(tmp_path):
+    md = tmp_path / "doc.md"
+    md.write_text("<!-- init-tocs -->\n<!-- end-tocs -->\ntext\n")
+
+    result = run_tocs(md)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == f"TOC updated in {md}: no headings found\n"
+
+
+def test_dry_run_prints_only_the_toc(tmp_path):
+    md = tmp_path / "doc.md"
+    md.write_text("<!-- init-tocs -->\n<!-- end-tocs -->\n# A\n")
+
+    result = run_tocs(md, "--dry-run")
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "- [A](#a)\n"

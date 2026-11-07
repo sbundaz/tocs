@@ -182,6 +182,7 @@ def read_depth_lock(line: str) -> int | None:
 def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: bool):
     tocs = []
     entries: list[TocEntry] = []
+    depth_reached = 0
     init_toc_position = -1
     end_toc_position = -1
     open_fence: str | None = None
@@ -223,6 +224,7 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
         else:
             entry = create_toc_entry(line, anchor_occurrences, max_depth)
             if entry and end_toc_position != -1:
+                depth_reached = max(depth_reached, entry.level)
                 entries.append(entry)
 
     if (
@@ -238,7 +240,7 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
     tocs.extend(format_toc(entries))
     lines_before_tocs = original_lines[: init_toc_position + 1]
     lines_after_tocs = original_lines[end_toc_position:]
-    return [lines_before_tocs, tocs, lines_after_tocs]
+    return [lines_before_tocs, tocs, lines_after_tocs, depth_reached]
 
 
 def read_document(path: Path) -> Document:
@@ -287,7 +289,7 @@ def process(
     clear_depth: bool = False,
 ):
     original = read_document(path)
-    lines_before_tocs, tocs, lines_after_tocs = generate_toc(
+    lines_before_tocs, tocs, lines_after_tocs, depth_reached = generate_toc(
         original.lines, depth, clear_depth
     )
 
@@ -297,6 +299,14 @@ def process(
     else:
         lines = lines_before_tocs + tocs + lines_after_tocs
         write_document(path, original._replace(lines=lines))
+
+    return depth_reached
+
+
+def success_message(file: str, depth_reached: int) -> str:
+    if depth_reached == 0:
+        return f"TOC updated in {file}: no headings found"
+    return f"TOC updated in {file}: depth reached {depth_reached}"
 
 
 def get_version() -> str:
@@ -349,7 +359,10 @@ def main():
     if args.depth is not None and args.depth < 1:
         exit_with_error("depth must be greater than 0")
 
-    process(path, args.depth, args.dry_run, args.clear_depth)
+    depth_reached = process(path, args.depth, args.dry_run, args.clear_depth)
+
+    if not args.dry_run:
+        print(success_message(args.file, depth_reached))
 
 
 if __name__ == "__main__":
