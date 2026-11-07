@@ -270,9 +270,8 @@ def read_document(path: Path) -> Document:
             content = f.read()
     except UnicodeDecodeError as e:
         exit_with_error(f"{path} is not valid UTF-8 ({e.reason} at byte {e.start})")
-    except (IOError, PermissionError) as e:
-        print(f"Error while reading {path}: {e}", file=sys.stderr)
-        sys.exit(1)
+    except OSError as e:
+        exit_with_error(f"Could not read {path}: {e}")
 
     newline = "\r\n" if "\r\n" in content else "\n"
     # Split on newlines only: str.splitlines() also splits on form feeds,
@@ -302,8 +301,7 @@ def write_document(path: Path, document: Document):
     except OSError as e:
         if tmp_path is not None and os.path.exists(tmp_path):
             os.unlink(tmp_path)
-        print(f"Error while writing {path}: {e}", file=sys.stderr)
-        sys.exit(1)
+        exit_with_error(f"Could not write {path}: {e}")
 
 
 def process(
@@ -367,12 +365,13 @@ def main():
     path = Path(args.file).resolve()
 
     if not path.exists():
-        print(f"Error: File '{args.file}' not found", file=sys.stderr)
-        sys.exit(1)
+        exit_with_error(f"File '{args.file}' not found")
+
+    if not path.is_file():
+        exit_with_error(f"'{args.file}' is not a file")
 
     if args.depth is not None and args.depth < 1:
-        print("Error: depth must be greater than 0", file=sys.stderr)
-        sys.exit(1)
+        exit_with_error("depth must be greater than 0")
 
     process(path, args.depth, args.dry_run, args.clear_depth)
 

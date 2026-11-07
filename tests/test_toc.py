@@ -501,3 +501,17 @@ def test_version_comes_from_package_metadata():
 
     assert result.returncode == 0
     assert result.stdout == f"tocs {version('tocs')}\n"
+
+
+def test_missing_file_is_reported(tmp_path):
+    result = run_tocs(tmp_path / "missing.md")
+
+    assert result.returncode == 1
+    assert result.stderr == f"Error: File '{tmp_path / 'missing.md'}' not found\n"
+
+
+def test_directory_is_rejected(tmp_path):
+    result = run_tocs(tmp_path)
+
+    assert result.returncode == 1
+    assert result.stderr == f"Error: '{tmp_path}' is not a file\n"
