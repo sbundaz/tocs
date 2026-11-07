@@ -217,3 +217,29 @@ def test_duplicate_marker_is_rejected_without_touching_the_file(tmp_path, marker
     assert result.returncode == 1
     assert result.stderr == f"Error: Found more than one '{marker}' marker.\n"
     assert md.read_text() == original
+
+
+@pytest.mark.parametrize(
+    "line",
+    ["#", "###", "#hashtag", "####### seven hashes", "    # indented code"],
+)
+def test_lines_that_are_not_toc_headings(line):
+    assert create_toc_row(line, {}) is None
+
+
+def test_heading_with_up_to_three_leading_spaces():
+    assert (
+        create_toc_row("   ## Indented", {}) == f"{INDENT_LEVEL}- [Indented](#indented)"
+    )
+
+
+def test_hash_only_line_does_not_crash(tmp_path):
+    md = tmp_path / "doc.md"
+    md.write_text("<!-- init-tocs -->\n<!-- end-tocs -->\n###\n#hashtag\n# A\n")
+
+    result = run_tocs(md)
+
+    assert result.returncode == 0, result.stderr
+    assert md.read_text() == (
+        "<!-- init-tocs -->\n- [A](#a)\n<!-- end-tocs -->\n###\n#hashtag\n# A\n"
+    )

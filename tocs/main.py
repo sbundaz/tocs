@@ -8,20 +8,33 @@ INIT_MARKER = "<!-- init-tocs -->"
 END_MARKER = "<!-- end-tocs -->"
 
 
+# CommonMark ATX heading: up to 3 spaces of indentation, 1-6 '#', then a space,
+# a tab or the end of the line.
+HEADING_RE = re.compile(r" {0,3}(#{1,6})(?:[ \t](.*))?")
+
+
+def parse_heading(line: str) -> tuple[int, str] | None:
+    """Return (level, text) if the line is an ATX heading, otherwise None."""
+    match = HEADING_RE.fullmatch(line)
+    if not match:
+        return None
+    return len(match.group(1)), match.group(2) or ""
+
+
 def create_toc_row(
     line: str, anchor_occurrences: dict[str, int], max_depth: int | None = None
 ):
-    hashes = 0
-    j = 0
+    heading = parse_heading(line)
+    if heading is None:
+        return None
 
-    while line[j] == "#":
-        hashes += 1
-        j += 1
+    hashes, line_content = heading
+    if not line_content:
+        return None
 
     if max_depth and hashes > max_depth:
         return None
 
-    line_content = line[hashes + 1 :]
     anchor = create_anchor(line_content)
 
     if anchor not in anchor_occurrences:
@@ -99,7 +112,7 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
             if end_toc_position != -1:
                 exit_with_error(f"Found more than one '{END_MARKER}' marker.")
             end_toc_position = i
-        elif line.startswith("#"):
+        else:
             toc_row = create_toc_row(line, anchor_occurrences, max_depth)
             if toc_row:
                 tocs.append(toc_row)
