@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 import re
 import sys
+from typing import NamedTuple
 
 INDENT_LEVEL = "    "
 INIT_MARKER = "<!-- init-tocs -->"
@@ -24,26 +25,52 @@ def parse_heading(line: str) -> tuple[int, str] | None:
     return len(match.group(1)), text
 
 
-def create_toc_row(
+class TocEntry(NamedTuple):
+    level: int
+    text: str
+    anchor: str
+
+
+def create_toc_entry(
     line: str, anchor_occurrences: dict[str, int], max_depth: int | None = None
-):
+) -> TocEntry | None:
     heading = parse_heading(line)
     if heading is None:
         return None
 
-    hashes, line_content = heading
-    if not line_content:
+    level, text = heading
+    if not text:
         return None
 
     # Every heading gets an anchor on the rendered page, including the ones
     # left out of the TOC, so count it before applying the depth limit.
-    anchor = unique_anchor(create_anchor(line_content), anchor_occurrences)
+    anchor = unique_anchor(create_anchor(text), anchor_occurrences)
 
-    if max_depth and hashes > max_depth:
+    if max_depth and level > max_depth:
         return None
 
-    toc_row = f"{INDENT_LEVEL *(hashes-1)}- [{line_content}](#{anchor})"
-    return toc_row
+    return TocEntry(level, text, anchor)
+
+
+def format_toc(entries: list[TocEntry]) -> list[str]:
+    """
+    Render entries as a nested list.
+
+    Nesting is relative to the shallowest heading and grows by at most one
+    level per row: a list item indented by 4+ spaces more than allowed (a
+    document without H1, or an H1 followed by an H3) renders as a code block.
+    """
+    if not entries:
+        return []
+
+    base_level = min(entry.level for entry in entries)
+    rows = []
+    previous_depth = -1
+    for entry in entries:
+        depth = min(entry.level - base_level, previous_depth + 1)
+        rows.append(f"{INDENT_LEVEL * depth}- [{entry.text}](#{entry.anchor})")
+        previous_depth = depth
+    return rows
 
 
 def unique_anchor(anchor: str, anchor_occurrences: dict[str, int]) -> str:
@@ -123,6 +150,7 @@ def is_marker(line: str, marker: str) -> bool:
 
 def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: bool):
     tocs = []
+    entries: list[TocEntry] = []
     init_toc_position = -1
     end_toc_position = -1
     open_fence: str | None = None
@@ -163,9 +191,9 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
                 exit_with_error(f"Found more than one '{END_MARKER}' marker.")
             end_toc_position = i
         else:
-            toc_row = create_toc_row(line, anchor_occurrences, max_depth)
-            if toc_row:
-                tocs.append(toc_row)
+            entry = create_toc_entry(line, anchor_occurrences, max_depth)
+            if entry:
+                entries.append(entry)
 
     if (
         init_toc_position == -1
@@ -177,6 +205,7 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
             f"Add '{INIT_MARKER}' and '{END_MARKER}' to your file."
         )
 
+    tocs.extend(format_toc(entries))
     lines_before_tocs = original_lines[: init_toc_position + 1]
     lines_after_tocs = original_lines[end_toc_position:]
     return [lines_before_tocs, tocs, lines_after_tocs]

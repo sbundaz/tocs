@@ -30,7 +30,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `tocs/main.py`: Single-file CLI implementation containing all core logic
 - `process()`: Main entry point that coordinates TOC generation
 - `generate_toc()`: Core algorithm that parses markdown and builds TOC structure
-- `create_toc_row()`: Generates individual TOC entries with proper indentation and anchors
+- `create_toc_entry()`: Turns a heading line into a `TocEntry` (level, text, unique anchor)
+- `format_toc()`: Renders entries as a nested list, indented relative to the shallowest heading
 - `create_anchor()`: Converts header text to URL-safe anchor links
 
 ### Key Functions
@@ -41,7 +42,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Test Structure
 - Integration tests use `subprocess` to test actual CLI execution
 - Fixture-based testing with input/output markdown files in `tests/fixtures/`
-- Unit tests for individual functions like `create_toc_row()`
+- Unit tests for individual functions like `create_toc_entry()` and `format_toc()`
 - Parameterized tests for error conditions and edge cases
 
 ## Code Style

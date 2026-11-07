@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from tocs.main import INDENT_LEVEL, create_toc_row
+from tocs.main import INDENT_LEVEL, create_toc_entry, format_toc
 
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = ROOT / "tests" / "fixtures"
@@ -33,6 +33,12 @@ def fixture_copy(tmp_path, name):
 
 def read_fixture(name):
     return (FIXTURES / name).read_text()
+
+
+def toc_row(line, anchor_occurrences):
+    """Format a single heading as a TOC row, or None if it gets no entry."""
+    entry = create_toc_entry(line, anchor_occurrences)
+    return None if entry is None else format_toc([entry])[0]
 
 
 def test_lorem_ipsum(tmp_path):
@@ -88,34 +94,29 @@ def test_invalid_toc_configuration(tmp_path, fixture_file_name):
     assert result.stderr == MARKERS_ERROR
 
 
-def test_create_toc_row_h1():
+def test_toc_row_h1():
     header = "# Hello World"
 
-    result = create_toc_row(header, {})
+    result = toc_row(header, {})
 
     assert result == "- [Hello World](#hello-world)"
 
 
-def test_create_toc_row_h2():
-    header = "## Hello World"
+def test_format_toc_nests_by_level():
+    occurrences = {}
+    entries = [create_toc_entry(h, occurrences) for h in ["# A", "## B", "### C"]]
 
-    result = create_toc_row(header, {})
-
-    assert result == f"{INDENT_LEVEL}- [Hello World](#hello-world)"
-
-
-def test_create_toc_row_h3():
-    header = "### Hello World"
-
-    result = create_toc_row(header, {})
-
-    assert result == f"{INDENT_LEVEL}{INDENT_LEVEL}- [Hello World](#hello-world)"
+    assert format_toc(entries) == [
+        "- [A](#a)",
+        f"{INDENT_LEVEL}- [B](#b)",
+        f"{INDENT_LEVEL}{INDENT_LEVEL}- [C](#c)",
+    ]
 
 
 def test_create_toc_with_hyphen():
     header = "# Hello-World"
 
-    result = create_toc_row(header, {})
+    result = toc_row(header, {})
 
     assert result == "- [Hello-World](#hello-world)"
 
@@ -123,7 +124,7 @@ def test_create_toc_with_hyphen():
 def test_create_toc_with_multiple_hyphens():
     header = "# Hello--World"
 
-    result = create_toc_row(header, {})
+    result = toc_row(header, {})
 
     assert result == "- [Hello--World](#hello--world)"
 
@@ -131,7 +132,7 @@ def test_create_toc_with_multiple_hyphens():
 def test_create_toc_with_underscore():
     header = "# Hello_World"
 
-    result = create_toc_row(header, {})
+    result = toc_row(header, {})
 
     assert result == "- [Hello_World](#hello_world)"
 
@@ -139,7 +140,7 @@ def test_create_toc_with_underscore():
 def test_create_toc_with_multiple_underscore():
     header = "# Hello__World"
 
-    result = create_toc_row(header, {})
+    result = toc_row(header, {})
 
     assert result == "- [Hello__World](#hello__world)"
 
@@ -147,7 +148,7 @@ def test_create_toc_with_multiple_underscore():
 def test_create_toc_remove_special_chars():
     header = "# Hello!?.:;'\"()[]{}@#$%^&*+=<>/\\|`~World"
 
-    result = create_toc_row(header, {})
+    result = toc_row(header, {})
 
     assert result == "- [Hello!?.:;'\"()[]{}@#$%^&*+=<>/\\|`~World](#helloworld)"
 
@@ -224,13 +225,11 @@ def test_duplicate_marker_is_rejected_without_touching_the_file(tmp_path, marker
     ["#", "###", "#hashtag", "####### seven hashes", "    # indented code"],
 )
 def test_lines_that_are_not_toc_headings(line):
-    assert create_toc_row(line, {}) is None
+    assert create_toc_entry(line, {}) is None
 
 
 def test_heading_with_up_to_three_leading_spaces():
-    assert (
-        create_toc_row("   ## Indented", {}) == f"{INDENT_LEVEL}- [Indented](#indented)"
-    )
+    assert toc_row("   ## Indented", {}) == "- [Indented](#indented)"
 
 
 def test_hash_only_line_does_not_crash(tmp_path):
@@ -257,11 +256,11 @@ def test_hash_only_line_does_not_crash(tmp_path):
     ],
 )
 def test_heading_whitespace_and_closing_hashes(line, expected):
-    assert create_toc_row(line, {}) == expected
+    assert toc_row(line, {}) == expected
 
 
 def test_heading_made_only_of_closing_hashes_is_empty():
-    assert create_toc_row("# ###", {}) is None
+    assert create_toc_entry("# ###", {}) is None
 
 
 @pytest.mark.parametrize(
@@ -330,6 +329,24 @@ def test_headings_beyond_depth_still_count_for_duplicate_anchors(tmp_path):
 def test_duplicate_anchor_does_not_clash_with_numbered_heading():
     occurrences = {}
 
-    rows = [create_toc_row(h, occurrences) for h in ["# Foo", "# Foo", "# Foo 1"]]
+    rows = [toc_row(h, occurrences) for h in ["# Foo", "# Foo", "# Foo 1"]]
 
     assert rows == ["- [Foo](#foo)", "- [Foo](#foo-1)", "- [Foo 1](#foo-1-1)"]
+
+
+@pytest.mark.parametrize(
+    "headings, expected",
+    [
+        # No H1: the TOC must not start with an indented line.
+        (["## A", "### B", "## C"], ["- [A](#a)", "    - [B](#b)", "- [C](#c)"]),
+        # Skipped level: B is nested one level, not two.
+        (["# A", "### B", "# C"], ["- [A](#a)", "    - [B](#b)", "- [C](#c)"]),
+        # Deeper first heading: start at the margin.
+        (["## A", "# B", "## C"], ["- [A](#a)", "- [B](#b)", "    - [C](#c)"]),
+    ],
+)
+def test_format_toc_never_over_indents(headings, expected):
+    occurrences = {}
+    entries = [create_toc_entry(h, occurrences) for h in headings]
+
+    assert format_toc(entries) == expected
