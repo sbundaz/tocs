@@ -325,3 +325,11 @@ def test_headings_beyond_depth_still_count_for_duplicate_anchors(tmp_path):
         "    - [Usage](#usage)\n    - [Usage](#usage-2)\n"
         f"<!-- end-tocs -->\n{body}"
     )
+
+
+def test_duplicate_anchor_does_not_clash_with_numbered_heading():
+    occurrences = {}
+
+    rows = [create_toc_row(h, occurrences) for h in ["# Foo", "# Foo", "# Foo 1"]]
+
+    assert rows == ["- [Foo](#foo)", "- [Foo](#foo-1)", "- [Foo 1](#foo-1-1)"]

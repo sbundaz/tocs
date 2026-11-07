@@ -37,19 +37,27 @@ def create_toc_row(
 
     # Every heading gets an anchor on the rendered page, including the ones
     # left out of the TOC, so count it before applying the depth limit.
-    anchor = create_anchor(line_content)
-
-    if anchor not in anchor_occurrences:
-        anchor_occurrences[anchor] = 1
-    else:
-        anchor_occurrences[anchor] += 1
-        anchor = anchor + "-" + str(anchor_occurrences[anchor] - 1)
+    anchor = unique_anchor(create_anchor(line_content), anchor_occurrences)
 
     if max_depth and hashes > max_depth:
         return None
 
     toc_row = f"{INDENT_LEVEL *(hashes-1)}- [{line_content}](#{anchor})"
     return toc_row
+
+
+def unique_anchor(anchor: str, anchor_occurrences: dict[str, int]) -> str:
+    """
+    Make the anchor unique the way GitHub does (github-slugger): append -1, -2,
+    ... until the result has not been used, including by a heading whose own
+    text already ends with a number.
+    """
+    original = anchor
+    while anchor in anchor_occurrences:
+        anchor_occurrences[original] += 1
+        anchor = f"{original}-{anchor_occurrences[original]}"
+    anchor_occurrences[anchor] = 0
+    return anchor
 
 
 def create_anchor(line_content):
