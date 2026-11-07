@@ -11,9 +11,23 @@ from typing import NamedTuple
 INDENT_LEVEL = "    "
 INIT_MARKER = "<!-- init-tocs -->"
 END_MARKER = "<!-- end-tocs -->"
-
-
 HEADING_RE = re.compile(r" {0,3}(#{1,6})(?:[ \t](.*))?")
+LINK_RE = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
+HTML_TAG_RE = re.compile(r"</?[A-Za-z][^>]*>")
+FENCE_RE = re.compile(r"\s*(`{3,}|~{3,})(.*)")
+DEPTH_LOCK_RE = re.compile(r"\s*<!--\s*depth\s*=\s*(\d+)\s*-->\s*")
+
+
+class TocEntry(NamedTuple):
+    level: int
+    text: str
+    anchor: str
+
+
+class Document(NamedTuple):
+    lines: list[str]
+    newline: str
+    trailing_newline: bool
 
 
 def parse_heading(line: str) -> tuple[int, str] | None:
@@ -24,12 +38,6 @@ def parse_heading(line: str) -> tuple[int, str] | None:
     text = (match.group(2) or "").strip()
     text = re.sub(r"(?:^|[ \t]+)#+$", "", text).strip()
     return len(match.group(1)), text
-
-
-class TocEntry(NamedTuple):
-    level: int
-    text: str
-    anchor: str
 
 
 def create_toc_entry(
@@ -87,10 +95,6 @@ def unique_anchor(anchor: str, anchor_occurrences: dict[str, int]) -> str:
     return anchor
 
 
-LINK_RE = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
-HTML_TAG_RE = re.compile(r"</?[A-Za-z][^>]*>")
-
-
 def strip_links(text: str) -> str:
     """Replace [text](url) links and ![alt](src) images with their text."""
     return LINK_RE.sub(r"\1", text)
@@ -100,9 +104,6 @@ def create_anchor(line_content):
     line_content = HTML_TAG_RE.sub("", strip_links(line_content))
     anchor = re.sub(r"[^\w\-_ ]", "", line_content)
     return anchor.replace(" ", "-").lower()
-
-
-FENCE_RE = re.compile(r"\s*(`{3,}|~{3,})(.*)")
 
 
 def update_open_fence(open_fence: str | None, line: str) -> str | None:
@@ -154,9 +155,6 @@ def exit_with_error(message: str):
 def is_marker(line: str, marker: str) -> bool:
     """Markers count only as whole lines, so mentions in prose are ignored."""
     return line.strip() == marker
-
-
-DEPTH_LOCK_RE = re.compile(r"\s*<!--\s*depth\s*=\s*(\d+)\s*-->\s*")
 
 
 def read_depth_lock(line: str) -> int | None:
@@ -241,12 +239,6 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
     lines_before_tocs = original_lines[: init_toc_position + 1]
     lines_after_tocs = original_lines[end_toc_position:]
     return [lines_before_tocs, tocs, lines_after_tocs]
-
-
-class Document(NamedTuple):
-    lines: list[str]
-    newline: str
-    trailing_newline: bool
 
 
 def read_document(path: Path) -> Document:
