@@ -294,3 +294,19 @@ def test_markers_after_code_block_with_trailing_space_are_found(tmp_path):
     result = run_tocs(md)
 
     assert result.returncode == 0, result.stderr
+
+
+def test_yaml_front_matter_comments_are_not_headings(tmp_path):
+    md = tmp_path / "doc.md"
+    md.write_text(
+        "---\n# yaml comment\ntitle: x\n---\n"
+        "<!-- init-tocs -->\n<!-- end-tocs -->\n# Real\n"
+    )
+
+    result = run_tocs(md)
+
+    assert result.returncode == 0, result.stderr
+    assert md.read_text() == (
+        "---\n# yaml comment\ntitle: x\n---\n"
+        "<!-- init-tocs -->\n- [Real](#real)\n<!-- end-tocs -->\n# Real\n"
+    )

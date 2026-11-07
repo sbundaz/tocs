@@ -91,6 +91,16 @@ def update_open_fence(open_fence: str | None, line: str) -> str | None:
     return open_fence
 
 
+def find_front_matter_end(lines: list[str]) -> int:
+    """Index of the line closing a leading YAML front matter block, or -1."""
+    if not lines or lines[0].rstrip() != "---":
+        return -1
+    for i, line in enumerate(lines[1:], start=1):
+        if line.rstrip() in ("---", "..."):
+            return i
+    return -1
+
+
 def exit_with_error(message: str):
     print(f"Error: {message}", file=sys.stderr)
     sys.exit(1)
@@ -107,8 +117,12 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
     end_toc_position = -1
     open_fence: str | None = None
     anchor_occurrences: dict[str, int] = {}
+    front_matter_end = find_front_matter_end(original_lines)
 
     for i, line in enumerate(original_lines):
+        if i <= front_matter_end:
+            continue
+
         in_code_block = open_fence is not None
         open_fence = update_open_fence(open_fence, line)
 
