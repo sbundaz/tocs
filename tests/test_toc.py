@@ -492,3 +492,12 @@ def test_write_keeps_permissions_and_leaves_no_temp_files(tmp_path):
     assert result.returncode == 0, result.stderr
     assert md.stat().st_mode & 0o777 == 0o640
     assert [p.name for p in tmp_path.iterdir()] == ["doc.md"]
+
+
+def test_version_comes_from_package_metadata():
+    from importlib.metadata import version
+
+    result = run_tocs("--version")
+
+    assert result.returncode == 0
+    assert result.stdout == f"tocs {version('tocs')}\n"

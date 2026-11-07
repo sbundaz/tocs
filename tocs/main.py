@@ -1,4 +1,5 @@
 import argparse
+from importlib.metadata import PackageNotFoundError, version
 import os
 import shutil
 import tempfile
@@ -324,6 +325,14 @@ def process(
         write_document(path, original._replace(lines=lines))
 
 
+def get_version() -> str:
+    """Single source of truth: the version declared in pyproject.toml."""
+    try:
+        return version("tocs")
+    except PackageNotFoundError:
+        return "unknown"
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="tocs",
@@ -348,7 +357,7 @@ def main():
         action="store_true",
         help="Clear the max depth once it has been set and locked in the TOC marker",
     )
-    parser.add_argument("--version", action="version", version="tocs 1.0.8")
+    parser.add_argument("--version", action="version", version=f"tocs {get_version()}")
     parser.add_argument(
         "--dry-run",
         action="store_true",
