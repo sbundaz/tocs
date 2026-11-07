@@ -243,3 +243,22 @@ def test_hash_only_line_does_not_crash(tmp_path):
     assert md.read_text() == (
         "<!-- init-tocs -->\n- [A](#a)\n<!-- end-tocs -->\n###\n#hashtag\n# A\n"
     )
+
+
+@pytest.mark.parametrize(
+    "line, expected",
+    [
+        ("# Title  ", "- [Title](#title)"),
+        ("#  Two spaces", "- [Two spaces](#two-spaces)"),
+        ("#\tTab", "- [Tab](#tab)"),
+        ("# Closed #", "- [Closed](#closed)"),
+        ("# Closed ###   ", "- [Closed](#closed)"),
+        ("# C#", "- [C#](#c)"),
+    ],
+)
+def test_heading_whitespace_and_closing_hashes(line, expected):
+    assert create_toc_row(line, {}) == expected
+
+
+def test_heading_made_only_of_closing_hashes_is_empty():
+    assert create_toc_row("# ###", {}) is None

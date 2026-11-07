@@ -18,7 +18,10 @@ def parse_heading(line: str) -> tuple[int, str] | None:
     match = HEADING_RE.fullmatch(line)
     if not match:
         return None
-    return len(match.group(1)), match.group(2) or ""
+    text = (match.group(2) or "").strip()
+    # Drop the optional closing sequence ("# Title ##"), but keep "# C#".
+    text = re.sub(r"(?:^|[ \t]+)#+$", "", text).strip()
+    return len(match.group(1)), text
 
 
 def create_toc_row(
