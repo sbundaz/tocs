@@ -452,3 +452,43 @@ def test_utf8_is_used_regardless_of_locale(tmp_path):
 
     assert result.returncode == 0, result.stderr
     assert "- [Caffè](#caffè)" in md.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    "original, expected",
+    [
+        (
+            "<!-- init-tocs -->\r\n<!-- end-tocs -->\r\n# A\r\n",
+            "<!-- init-tocs -->\r\n- [A](#a)\r\n<!-- end-tocs -->\r\n# A\r\n",
+        ),
+        (
+            "<!-- init-tocs -->\n<!-- end-tocs -->\n# A",
+            "<!-- init-tocs -->\n- [A](#a)\n<!-- end-tocs -->\n# A",
+        ),
+        (
+            "<!-- init-tocs -->\n<!-- end-tocs -->\n# A\npage\fbreak\n",
+            "<!-- init-tocs -->\n- [A](#a)\n<!-- end-tocs -->\n# A\npage\fbreak\n",
+        ),
+    ],
+    ids=["crlf", "no-final-newline", "form-feed"],
+)
+def test_file_formatting_is_preserved(tmp_path, original, expected):
+    md = tmp_path / "doc.md"
+    md.write_bytes(original.encode())
+
+    result = run_tocs(md)
+
+    assert result.returncode == 0, result.stderr
+    assert md.read_bytes() == expected.encode()
+
+
+def test_write_keeps_permissions_and_leaves_no_temp_files(tmp_path):
+    md = tmp_path / "doc.md"
+    md.write_text("<!-- init-tocs -->\n<!-- end-tocs -->\n# A\n")
+    md.chmod(0o640)
+
+    result = run_tocs(md)
+
+    assert result.returncode == 0, result.stderr
+    assert md.stat().st_mode & 0o777 == 0o640
+    assert [p.name for p in tmp_path.iterdir()] == ["doc.md"]

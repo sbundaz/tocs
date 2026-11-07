@@ -36,7 +36,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Key Functions
 - `update_open_fence()`: Tracks fenced code blocks (``` or ~~~, any length, possibly indented) so headers inside them are skipped
-- `read_lines_from()`/`write_to()`: File I/O with error handling
+- `read_document()`/`write_document()`: UTF-8 file I/O that preserves line endings and the final newline; writes are atomic (temp file + `os.replace`)
 - Anchor collision handling: Duplicate anchors get numbered suffixes (-1, -2, etc.)
 
 ### Test Structure

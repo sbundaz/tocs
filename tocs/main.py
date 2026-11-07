@@ -1,4 +1,7 @@
 import argparse
+import os
+import shutil
+import tempfile
 from pathlib import Path
 import re
 import sys
@@ -253,25 +256,51 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
     return [lines_before_tocs, tocs, lines_after_tocs]
 
 
-def read_lines_from(path):
+class Document(NamedTuple):
+    lines: list[str]
+    newline: str
+    trailing_newline: bool
+
+
+def read_document(path: Path) -> Document:
+    """Read a file keeping track of its line ending and final newline."""
     try:
-        with open(path, "rt", encoding="utf-8") as f:
-            lines = f.read().splitlines()
+        with open(path, "rt", encoding="utf-8", newline="") as f:
+            content = f.read()
     except UnicodeDecodeError as e:
         exit_with_error(f"{path} is not valid UTF-8 ({e.reason} at byte {e.start})")
     except (IOError, PermissionError) as e:
         print(f"Error while reading {path}: {e}", file=sys.stderr)
         sys.exit(1)
 
-    return lines
+    newline = "\r\n" if "\r\n" in content else "\n"
+    # Split on newlines only: str.splitlines() also splits on form feeds,
+    # U+2028 and other characters that must be written back unchanged.
+    lines = content.replace("\r\n", "\n").split("\n")
+    trailing_newline = lines[-1] == ""
+    if trailing_newline:
+        lines.pop()
+    return Document(lines, newline, trailing_newline)
 
 
-def write_to(path, lines):
+def write_document(path: Path, document: Document):
+    """Replace the file atomically, so an interrupted write cannot truncate it."""
+    content = document.newline.join(document.lines)
+    if document.trailing_newline:
+        content += document.newline
+
+    tmp_path = None
     try:
-        with open(path, "w", encoding="utf-8") as f:
-            for l in lines:
-                f.write(l + "\n")
-    except (IOError, PermissionError) as e:
+        fd, tmp_path = tempfile.mkstemp(
+            dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"
+        )
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as f:
+            f.write(content)
+        shutil.copymode(path, tmp_path)
+        os.replace(tmp_path, path)
+    except OSError as e:
+        if tmp_path is not None and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
         print(f"Error while writing {path}: {e}", file=sys.stderr)
         sys.exit(1)
 
@@ -282,16 +311,17 @@ def process(
     dry_run: bool = False,
     clear_depth: bool = False,
 ):
-    original_lines = read_lines_from(path)
+    original = read_document(path)
     lines_before_tocs, tocs, lines_after_tocs = generate_toc(
-        original_lines, depth, clear_depth
+        original.lines, depth, clear_depth
     )
 
     if dry_run:
         for t in tocs:
             print(t)
     else:
-        write_to(path, lines_before_tocs + tocs + lines_after_tocs)
+        lines = lines_before_tocs + tocs + lines_after_tocs
+        write_document(path, original._replace(lines=lines))
 
 
 def main():
