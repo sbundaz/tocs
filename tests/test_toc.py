@@ -188,3 +188,32 @@ def test_dry_run(tmp_path):
     assert result.returncode == 0
     assert md.read_text() == read_fixture("lorem_ipsum_input.md")
     assert "- [Header 1](#header-1)" in result.stdout
+
+
+def test_marker_mentioned_in_text_is_not_a_marker(tmp_path):
+    md = tmp_path / "doc.md"
+    md.write_text(
+        "<!-- init-tocs -->\n<!-- end-tocs -->\n"
+        "# A\nIMPORTANT TEXT\n## B\nsee <!-- end-tocs --> marker\n"
+    )
+
+    result = run_tocs(md)
+
+    assert result.returncode == 0
+    assert md.read_text() == (
+        "<!-- init-tocs -->\n- [A](#a)\n    - [B](#b)\n<!-- end-tocs -->\n"
+        "# A\nIMPORTANT TEXT\n## B\nsee <!-- end-tocs --> marker\n"
+    )
+
+
+@pytest.mark.parametrize("marker", ["<!-- init-tocs -->", "<!-- end-tocs -->"])
+def test_duplicate_marker_is_rejected_without_touching_the_file(tmp_path, marker):
+    md = tmp_path / "doc.md"
+    original = f"<!-- init-tocs -->\n<!-- end-tocs -->\n# A\ntext\n{marker}\n"
+    md.write_text(original)
+
+    result = run_tocs(md)
+
+    assert result.returncode == 1
+    assert result.stderr == f"Error: Found more than one '{marker}' marker.\n"
+    assert md.read_text() == original

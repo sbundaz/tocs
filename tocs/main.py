@@ -4,6 +4,8 @@ import re
 import sys
 
 INDENT_LEVEL = "    "
+INIT_MARKER = "<!-- init-tocs -->"
+END_MARKER = "<!-- end-tocs -->"
 
 
 def create_toc_row(
@@ -52,6 +54,16 @@ def toggle_ignore_rows_flag(ignore_rows, line):
         return ignore_rows
 
 
+def exit_with_error(message: str):
+    print(f"Error: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+def is_marker(line: str, marker: str) -> bool:
+    """Markers count only as whole lines, so mentions in prose are ignored."""
+    return line.strip() == marker
+
+
 def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: bool):
     tocs = []
     init_toc_position = -1
@@ -65,7 +77,9 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
         if ignore_rows:
             continue
 
-        if "<!-- init-tocs -->" in line:
+        if is_marker(line, INIT_MARKER):
+            if init_toc_position != -1:
+                exit_with_error(f"Found more than one '{INIT_MARKER}' marker.")
             init_toc_position = i
 
             if clear_depth:
@@ -81,7 +95,9 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
                     max_depth = int(depth_match.group(1))
                     tocs.append(f"<!-- depth={max_depth} -->")
 
-        elif "<!-- end-tocs -->" in line:
+        elif is_marker(line, END_MARKER):
+            if end_toc_position != -1:
+                exit_with_error(f"Found more than one '{END_MARKER}' marker.")
             end_toc_position = i
         elif line.startswith("#"):
             toc_row = create_toc_row(line, anchor_occurrences, max_depth)
@@ -93,11 +109,10 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
         or end_toc_position == -1
         or init_toc_position >= end_toc_position
     ):
-        print(
-            "Error: Missing or invalid TOC markers. Add '<!-- init-tocs -->' and '<!-- end-tocs -->' to your file.",
-            file=sys.stderr,
+        exit_with_error(
+            "Missing or invalid TOC markers. "
+            f"Add '{INIT_MARKER}' and '{END_MARKER}' to your file."
         )
-        sys.exit(1)
 
     lines_before_tocs = original_lines[: init_toc_position + 1]
     lines_after_tocs = original_lines[end_toc_position:]
