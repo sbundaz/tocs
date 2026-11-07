@@ -421,3 +421,34 @@ def test_depth_and_clear_depth_are_mutually_exclusive(tmp_path):
     assert result.returncode == 2
     assert "not allowed with argument" in result.stderr
     assert md.read_text() == read_fixture("lorem_ipsum_depth_2_input.md")
+
+
+def test_non_utf8_file_is_reported_cleanly(tmp_path):
+    md = tmp_path / "doc.md"
+    md.write_bytes("<!-- init-tocs -->\n<!-- end-tocs -->\n# Caffè\n".encode("latin-1"))
+
+    result = run_tocs(md)
+
+    assert result.returncode == 1
+    assert "is not valid UTF-8" in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_utf8_is_used_regardless_of_locale(tmp_path):
+    md = tmp_path / "doc.md"
+    md.write_text("<!-- init-tocs -->\n<!-- end-tocs -->\n# Caffè\n", encoding="utf-8")
+
+    result = subprocess.run(
+        [sys.executable, "-X", "utf8=0", str(MAIN), str(md)],
+        capture_output=True,
+        text=True,
+        env={
+            "LC_ALL": "C",
+            "LANG": "C",
+            "PYTHONIOENCODING": "utf-8",
+            "PYTHONCOERCECLOCALE": "0",
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "- [Caffè](#caffè)" in md.read_text(encoding="utf-8")

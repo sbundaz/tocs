@@ -255,8 +255,10 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
 
 def read_lines_from(path):
     try:
-        with open(path, "rt") as f:
+        with open(path, "rt", encoding="utf-8") as f:
             lines = f.read().splitlines()
+    except UnicodeDecodeError as e:
+        exit_with_error(f"{path} is not valid UTF-8 ({e.reason} at byte {e.start})")
     except (IOError, PermissionError) as e:
         print(f"Error while reading {path}: {e}", file=sys.stderr)
         sys.exit(1)
@@ -266,7 +268,7 @@ def read_lines_from(path):
 
 def write_to(path, lines):
     try:
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             for l in lines:
                 f.write(l + "\n")
     except (IOError, PermissionError) as e:
