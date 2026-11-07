@@ -55,19 +55,40 @@ def create_anchor(line_content):
     return anchor.replace(" ", "-").lower()
 
 
-def toggle_ignore_rows_flag(ignore_rows, line):
+# Fences may be indented (e.g. inside list items) and use backticks or tildes.
+FENCE_RE = re.compile(r"\s*(`{3,}|~{3,})(.*)")
+
+
+def update_open_fence(open_fence: str | None, line: str) -> str | None:
     """
-    Controls whether to ignore rows inside code snippets that start with ```.
-    Also handles multiline snippets.
+    Track fenced code blocks.
+
+    Returns the fence that opened the code block the line belongs to, or None
+    when the line is outside any code block. A block opened with N backticks
+    (or tildes) is closed only by a line with at least N of the same character
+    followed by nothing but whitespace.
     """
-    if line == "```":
-        return not ignore_rows
-    elif line.startswith("```") and not line.endswith("```"):
-        return True
-    elif line.startswith("```") and line.endswith("```"):
-        return False
-    else:
-        return ignore_rows
+    match = FENCE_RE.fullmatch(line)
+
+    if open_fence is None:
+        if not match:
+            return None
+        fence, info = match.groups()
+        if fence[0] == "`" and "`" in info:
+            # Not a fence but inline code on one line, such as ```code```.
+            return None
+        return fence
+
+    if match:
+        fence, rest = match.groups()
+        if (
+            fence[0] == open_fence[0]
+            and len(fence) >= len(open_fence)
+            and not rest.strip()
+        ):
+            return None
+
+    return open_fence
 
 
 def exit_with_error(message: str):
@@ -84,13 +105,15 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
     tocs = []
     init_toc_position = -1
     end_toc_position = -1
-    ignore_rows = False
+    open_fence: str | None = None
     anchor_occurrences: dict[str, int] = {}
 
     for i, line in enumerate(original_lines):
-        ignore_rows = toggle_ignore_rows_flag(ignore_rows, line)
+        in_code_block = open_fence is not None
+        open_fence = update_open_fence(open_fence, line)
 
-        if ignore_rows:
+        # Skip fence lines and everything between them.
+        if in_code_block or open_fence is not None:
             continue
 
         if is_marker(line, INIT_MARKER):

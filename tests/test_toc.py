@@ -262,3 +262,35 @@ def test_heading_whitespace_and_closing_hashes(line, expected):
 
 def test_heading_made_only_of_closing_hashes_is_empty():
     assert create_toc_row("# ###", {}) is None
+
+
+@pytest.mark.parametrize(
+    "code_block",
+    [
+        "```python\n# comment\n``` \n",  # closing fence with trailing space
+        "~~~\n# comment\n~~~\n",
+        "````md\n```\n# comment\n```\n````\n",  # shorter fence inside a longer one
+        "- item\n    ```bash\n    # comment\n    ```\n",  # fence inside a list item
+    ],
+)
+def test_headings_inside_code_blocks_are_ignored(tmp_path, code_block):
+    md = tmp_path / "doc.md"
+    body = f"# Before\n{code_block}# After\n"
+    md.write_text(f"<!-- init-tocs -->\n<!-- end-tocs -->\n{body}")
+
+    result = run_tocs(md)
+
+    assert result.returncode == 0, result.stderr
+    assert md.read_text() == (
+        "<!-- init-tocs -->\n- [Before](#before)\n- [After](#after)\n"
+        f"<!-- end-tocs -->\n{body}"
+    )
+
+
+def test_markers_after_code_block_with_trailing_space_are_found(tmp_path):
+    md = tmp_path / "doc.md"
+    md.write_text("```\ncode\n``` \n<!-- init-tocs -->\n<!-- end-tocs -->\n# A\n")
+
+    result = run_tocs(md)
+
+    assert result.returncode == 0, result.stderr

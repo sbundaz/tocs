@@ -34,7 +34,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `create_anchor()`: Converts header text to URL-safe anchor links
 
 ### Key Functions
-- `toggle_ignore_rows_flag()`: Handles code block detection to skip headers inside ```
+- `update_open_fence()`: Tracks fenced code blocks (``` or ~~~, any length, possibly indented) so headers inside them are skipped
 - `read_lines_from()`/`write_to()`: File I/O with error handling
 - Anchor collision handling: Duplicate anchors get numbered suffixes (-1, -2, etc.)
 
