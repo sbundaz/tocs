@@ -94,7 +94,7 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
         or init_toc_position >= end_toc_position
     ):
         print(
-            f"Error: Missing or invalid TOC markers. Add '<!-- init-tocs -->' and '<!-- end-tocs -->' to your file.",
+            "Error: Missing or invalid TOC markers. Add '<!-- init-tocs -->' and '<!-- end-tocs -->' to your file.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -125,9 +125,16 @@ def write_to(path, lines):
         sys.exit(1)
 
 
-def process(path: Path, depth: int | None = None, dry_run: bool = False, clear_depth: bool = False):
+def process(
+    path: Path,
+    depth: int | None = None,
+    dry_run: bool = False,
+    clear_depth: bool = False,
+):
     original_lines = read_lines_from(path)
-    lines_before_tocs, tocs, lines_after_tocs = generate_toc(original_lines, depth, clear_depth)
+    lines_before_tocs, tocs, lines_after_tocs = generate_toc(
+        original_lines, depth, clear_depth
+    )
 
     if dry_run:
         for t in tocs:
@@ -173,7 +180,7 @@ def main():
         sys.exit(1)
 
     if args.depth is not None and args.depth < 1:
-        print(f"Error: depth must be greater than 0", file=sys.stderr)
+        print("Error: depth must be greater than 0", file=sys.stderr)
         sys.exit(1)
 
     process(path, args.depth, args.dry_run, args.clear_depth)
