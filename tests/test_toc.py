@@ -379,3 +379,35 @@ def test_headings_above_the_toc_are_not_listed(tmp_path):
         "- [Title](#title-1)\n    - [Usage](#usage)\n"
         f"<!-- end-tocs -->\n{body}"
     )
+
+
+@pytest.mark.parametrize(
+    "lock", ["<!-- depth=1 --> ", "  <!--depth=1-->", "<!-- depth = 1 -->"]
+)
+def test_depth_lock_tolerates_whitespace(tmp_path, lock):
+    md = tmp_path / "doc.md"
+    md.write_text(f"<!-- init-tocs -->\n{lock}\n<!-- end-tocs -->\n# A\n## B\n")
+
+    result = run_tocs(md)
+
+    assert result.returncode == 0, result.stderr
+    assert md.read_text() == (
+        "<!-- init-tocs -->\n<!-- depth=1 -->\n- [A](#a)\n<!-- end-tocs -->\n"
+        "# A\n## B\n"
+    )
+
+
+@pytest.mark.parametrize("lock", ["<!-- depth=0 -->", "<!-- depth=two -->"])
+def test_invalid_depth_lock_is_reported_and_dropped(tmp_path, lock):
+    md = tmp_path / "doc.md"
+    md.write_text(f"<!-- init-tocs -->\n{lock}\n<!-- end-tocs -->\n# A\n## B\n")
+
+    result = run_tocs(md)
+
+    assert result.returncode == 0
+    assert result.stderr.startswith("Warning: ignoring")
+    assert lock in result.stderr
+    assert md.read_text() == (
+        "<!-- init-tocs -->\n- [A](#a)\n    - [B](#b)\n<!-- end-tocs -->\n"
+        "# A\n## B\n"
+    )

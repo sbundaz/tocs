@@ -162,6 +162,31 @@ def is_marker(line: str, marker: str) -> bool:
     return line.strip() == marker
 
 
+DEPTH_LOCK_RE = re.compile(r"\s*<!--\s*depth\s*=\s*(\d+)\s*-->\s*")
+
+
+def read_depth_lock(line: str) -> int | None:
+    """Return the depth stored in a '<!-- depth=N -->' line, if valid."""
+    match = DEPTH_LOCK_RE.fullmatch(line)
+    if match is None:
+        if re.match(r"\s*<!--\s*depth", line):
+            print(
+                f"Warning: ignoring malformed depth lock '{line.strip()}'",
+                file=sys.stderr,
+            )
+        return None
+
+    depth = int(match.group(1))
+    if depth < 1:
+        print(
+            f"Warning: ignoring depth lock '{line.strip()}', "
+            "depth must be greater than 0",
+            file=sys.stderr,
+        )
+        return None
+    return depth
+
+
 def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: bool):
     tocs = []
     entries: list[TocEntry] = []
@@ -193,11 +218,9 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
             if max_depth:
                 tocs.append(f"<!-- depth={max_depth} -->")
             elif init_toc_position + 1 < len(original_lines):
-                depth_match = re.fullmatch(
-                    r"<!-- depth=(\d+) -->", original_lines[init_toc_position + 1]
-                )
-                if depth_match:
-                    max_depth = int(depth_match.group(1))
+                locked_depth = read_depth_lock(original_lines[init_toc_position + 1])
+                if locked_depth:
+                    max_depth = locked_depth
                     tocs.append(f"<!-- depth={max_depth} -->")
 
         elif is_marker(line, END_MARKER):
