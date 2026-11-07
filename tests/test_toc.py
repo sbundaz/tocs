@@ -310,3 +310,18 @@ def test_yaml_front_matter_comments_are_not_headings(tmp_path):
         "---\n# yaml comment\ntitle: x\n---\n"
         "<!-- init-tocs -->\n- [Real](#real)\n<!-- end-tocs -->\n# Real\n"
     )
+
+
+def test_headings_beyond_depth_still_count_for_duplicate_anchors(tmp_path):
+    md = tmp_path / "doc.md"
+    body = "# A\n## Usage\n### Usage\n## Usage\n"
+    md.write_text(f"<!-- init-tocs -->\n<!-- end-tocs -->\n{body}")
+
+    result = run_tocs(md, "--depth", "2")
+
+    assert result.returncode == 0, result.stderr
+    assert md.read_text() == (
+        "<!-- init-tocs -->\n<!-- depth=2 -->\n- [A](#a)\n"
+        "    - [Usage](#usage)\n    - [Usage](#usage-2)\n"
+        f"<!-- end-tocs -->\n{body}"
+    )

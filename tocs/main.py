@@ -35,9 +35,8 @@ def create_toc_row(
     if not line_content:
         return None
 
-    if max_depth and hashes > max_depth:
-        return None
-
+    # Every heading gets an anchor on the rendered page, including the ones
+    # left out of the TOC, so count it before applying the depth limit.
     anchor = create_anchor(line_content)
 
     if anchor not in anchor_occurrences:
@@ -45,6 +44,9 @@ def create_toc_row(
     else:
         anchor_occurrences[anchor] += 1
         anchor = anchor + "-" + str(anchor_occurrences[anchor] - 1)
+
+    if max_depth and hashes > max_depth:
+        return None
 
     toc_row = f"{INDENT_LEVEL *(hashes-1)}- [{line_content}](#{anchor})"
     return toc_row
