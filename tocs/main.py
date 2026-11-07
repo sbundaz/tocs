@@ -13,8 +13,6 @@ INIT_MARKER = "<!-- init-tocs -->"
 END_MARKER = "<!-- end-tocs -->"
 
 
-# CommonMark ATX heading: up to 3 spaces of indentation, 1-6 '#', then a space,
-# a tab or the end of the line.
 HEADING_RE = re.compile(r" {0,3}(#{1,6})(?:[ \t](.*))?")
 
 
@@ -24,7 +22,6 @@ def parse_heading(line: str) -> tuple[int, str] | None:
     if not match:
         return None
     text = (match.group(2) or "").strip()
-    # Drop the optional closing sequence ("# Title ##"), but keep "# C#".
     text = re.sub(r"(?:^|[ \t]+)#+$", "", text).strip()
     return len(match.group(1)), text
 
@@ -43,13 +40,10 @@ def create_toc_entry(
         return None
 
     level, text = heading
-    # A link inside the TOC link would be invalid Markdown: keep its text only.
     text = strip_links(text)
     if not text:
         return None
 
-    # Every heading gets an anchor on the rendered page, including the ones
-    # left out of the TOC, so count it before applying the depth limit.
     anchor = unique_anchor(create_anchor(text), anchor_occurrences)
 
     if max_depth and level > max_depth:
@@ -103,14 +97,11 @@ def strip_links(text: str) -> str:
 
 
 def create_anchor(line_content):
-    # GitHub builds the anchor from the rendered text, so drop link targets
-    # and HTML tags before removing punctuation.
     line_content = HTML_TAG_RE.sub("", strip_links(line_content))
     anchor = re.sub(r"[^\w\-_ ]", "", line_content)
     return anchor.replace(" ", "-").lower()
 
 
-# Fences may be indented (e.g. inside list items) and use backticks or tildes.
 FENCE_RE = re.compile(r"\s*(`{3,}|~{3,})(.*)")
 
 
@@ -130,7 +121,6 @@ def update_open_fence(open_fence: str | None, line: str) -> str | None:
             return None
         fence, info = match.groups()
         if fence[0] == "`" and "`" in info:
-            # Not a fence but inline code on one line, such as ```code```.
             return None
         return fence
 
@@ -207,7 +197,6 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
         in_code_block = open_fence is not None
         open_fence = update_open_fence(open_fence, line)
 
-        # Skip fence lines and everything between them.
         if in_code_block or open_fence is not None:
             continue
 
@@ -232,12 +221,9 @@ def generate_toc(original_lines: list[str], max_depth: int | None, clear_depth: 
                 exit_with_error(f"Found more than one '{END_MARKER}' marker.")
             end_toc_position = i
         elif init_toc_position != -1 and end_toc_position == -1:
-            # Old TOC content: it is about to be replaced.
             continue
         else:
             entry = create_toc_entry(line, anchor_occurrences, max_depth)
-            # Headings above the TOC (e.g. the document title) keep their
-            # anchor, which affects duplicates, but are not listed.
             if entry and end_toc_position != -1:
                 entries.append(entry)
 
@@ -274,8 +260,6 @@ def read_document(path: Path) -> Document:
         exit_with_error(f"Could not read {path}: {e}")
 
     newline = "\r\n" if "\r\n" in content else "\n"
-    # Split on newlines only: str.splitlines() also splits on form feeds,
-    # U+2028 and other characters that must be written back unchanged.
     lines = content.replace("\r\n", "\n").split("\n")
     trailing_newline = lines[-1] == ""
     if trailing_newline:

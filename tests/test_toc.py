@@ -266,10 +266,10 @@ def test_heading_made_only_of_closing_hashes_is_empty():
 @pytest.mark.parametrize(
     "code_block",
     [
-        "```python\n# comment\n``` \n",  # closing fence with trailing space
+        "```python\n# comment\n``` \n",
         "~~~\n# comment\n~~~\n",
-        "````md\n```\n# comment\n```\n````\n",  # shorter fence inside a longer one
-        "- item\n    ```bash\n    # comment\n    ```\n",  # fence inside a list item
+        "````md\n```\n# comment\n```\n````\n",
+        "- item\n    ```bash\n    # comment\n    ```\n",
     ],
 )
 def test_headings_inside_code_blocks_are_ignored(tmp_path, code_block):
@@ -337,11 +337,8 @@ def test_duplicate_anchor_does_not_clash_with_numbered_heading():
 @pytest.mark.parametrize(
     "headings, expected",
     [
-        # No H1: the TOC must not start with an indented line.
         (["## A", "### B", "## C"], ["- [A](#a)", "    - [B](#b)", "- [C](#c)"]),
-        # Skipped level: B is nested one level, not two.
         (["# A", "### B", "# C"], ["- [A](#a)", "    - [B](#b)", "- [C](#c)"]),
-        # Deeper first heading: start at the margin.
         (["## A", "# B", "## C"], ["- [A](#a)", "- [B](#b)", "    - [C](#c)"]),
     ],
 )
